@@ -1,0 +1,61 @@
+import os
+#Data cleaning
+import pandas as pd
+import numpy as np
+#building a model
+from sklearn.model_selection import train_test_split,cross_val_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+#load our dataset
+house=pd.read_csv("boson.csv")
+#splitting the dataset
+x_train,x_test,y_train,y_test=train_test_split(house.drop(columns="MEDV"),house.MEDV,test_size=0.2,random_state=42,shuffle=True)
+
+#make a transformer
+scale=ColumnTransformer(transformers=[("tra1",StandardScaler(),slice(0,12))
+],remainder="passthrough")
+
+#model selectio 
+model=RandomForestRegressor()
+#model=LinearRegression()
+#model=DecisionTreeRegressor()
+
+#building a pipeline
+pipe=Pipeline([
+("scaling",scale),
+("model",model)
+])
+#fit the pipeline
+pipe.fit(x_train,y_train)
+#make predictio 
+predict=pipe.predict(x_test)
+#print("price: ",predict)
+#check the error
+mse=mean_squared_error(y_test,predict)
+err=np.sqrt(mse)
+print("error: ",err)
+
+# check cross val score
+sc=cross_val_score(pipe,x_train,y_train,scoring="neg_mean_squared_error",cv=5)
+score=np.sqrt(-sc)
+#print(score)
+
+# make a function
+def print_score(score):
+	print("score:", score)
+	print("mean:",score.mean())
+	print("std:", score.std())
+
+#print_score(score)
+
+#writing a file
+#with open("modemodel_performnce.txt","w") as f:
+#	f.write(f"{model}: \n\t{print_score(score)}\n")
+from joblib import load,dump
+dump(pipe,"house_price_prediction"
